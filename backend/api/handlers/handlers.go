@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"clinic/backend/internal/database"
 
@@ -52,12 +52,15 @@ func (h *PatientHandler) GetPatients(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(patients)
 }
 
-// GetPatient returns a single patient by ID
+// GetPatient returns a single patient by HN
 func (h *PatientHandler) GetPatient(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid patient ID", http.StatusBadRequest)
+	hnString := vars["hn"]
+
+	// Extract the numeric part from HN string (e.g., "HN000001" -> 1)
+	var id int
+	if _, err := fmt.Sscanf(hnString, "HN%d", &id); err != nil {
+		http.Error(w, "Invalid patient HN format", http.StatusBadRequest)
 		return
 	}
 
@@ -92,11 +95,7 @@ func (h *PatientHandler) CreatePatient(w http.ResponseWriter, r *http.Request) {
 // UpdatePatient updates an existing patient
 func (h *PatientHandler) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid patient ID", http.StatusBadRequest)
-		return
-	}
+	hnString := vars["hn"]
 
 	var patient database.Patient
 	if err := json.NewDecoder(r.Body).Decode(&patient); err != nil {
@@ -104,7 +103,7 @@ func (h *PatientHandler) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	patient.ID = id
+	patient.HN = hnString
 	if err := h.repo.Update(&patient); err != nil {
 		http.Error(w, "Failed to update patient", http.StatusInternalServerError)
 		return
@@ -117,9 +116,12 @@ func (h *PatientHandler) UpdatePatient(w http.ResponseWriter, r *http.Request) {
 // DeletePatient deletes a patient
 func (h *PatientHandler) DeletePatient(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid patient ID", http.StatusBadRequest)
+	hnString := vars["hn"]
+
+	// Extract the numeric part from HN string (e.g., "HN000001" -> 1)
+	var id int
+	if _, err := fmt.Sscanf(hnString, "HN%d", &id); err != nil {
+		http.Error(w, "Invalid patient HN format", http.StatusBadRequest)
 		return
 	}
 

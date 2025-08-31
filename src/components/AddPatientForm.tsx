@@ -3,12 +3,14 @@
 import { useState } from 'react';
 
 interface PatientFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  address: string;
+  hn: string;              // HN Number (HNXXXXXX)
+  fullName: string;        // ชื่อ-นามสกุล
+  gender: string;          // เพศ
+  nickname: string;        // ชื่อเล่น
+  phone: string;           // เบอร์โทร
+  age: number;             // อายุ
+  dateOfBirth: string;     // วันเกิด
+  photo: string;           // Photo URL/Base64
 }
 
 interface AddPatientFormProps {
@@ -17,22 +19,30 @@ interface AddPatientFormProps {
 
 export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
   const [formData, setFormData] = useState<PatientFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
+    hn: '',
+    fullName: '',
+    gender: '',
+    nickname: '',
     phone: '',
+    age: 0,
     dateOfBirth: '',
-    address: ''
+    photo: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Generate next HN number
+  const generateHN = () => {
+    const randomNum = Math.floor(Math.random() * 999999) + 1;
+    return `HN${randomNum.toString().padStart(6, '0')}`;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'age' ? parseInt(value) || 0 : value
     }));
   };
 
@@ -43,12 +53,18 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
     setSuccess(false);
 
     try {
+      // Generate HN if not provided
+      const submitData = {
+        ...formData,
+        hn: formData.hn || generateHN()
+      };
+
       const response = await fetch('http://localhost:8080/api/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
@@ -60,16 +76,18 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
       
       // Reset form
       setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
+        hn: '',
+        fullName: '',
+        gender: '',
+        nickname: '',
         phone: '',
+        age: 0,
         dateOfBirth: '',
-        address: ''
+        photo: ''
       });
       
       setSuccess(true);
-      onPatientAdded(); // Refresh the patient list or redirect
+      onPatientAdded(); // Refresh the patient list
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -92,9 +110,9 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900">Patient Information</h3>
+          <h3 className="text-2xl font-bold text-gray-900">เพิ่มข้อมูลผู้ป่วย</h3>
         </div>
-        <p className="text-gray-600">Please fill in all the required information to register a new patient.</p>
+        <p className="text-gray-600">กรุณากรอกข้อมูลผู้ป่วยให้ครบถ้วน</p>
       </div>
       
       {error && (
@@ -117,7 +135,7 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <div className="ml-3">
-              <p className="text-green-700 font-medium">Patient added successfully!</p>
+              <p className="text-green-700 font-medium">เพิ่มข้อมูลผู้ป่วยเรียบร้อยแล้ว!</p>
             </div>
           </div>
         </div>
@@ -126,58 +144,76 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700">
-              First Name *
+            <label htmlFor="hn" className="block text-sm font-semibold text-gray-700">
+              หมายเลข HN
             </label>
             <input
               type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
+              id="hn"
+              name="hn"
+              value={formData.hn}
               onChange={handleInputChange}
-              required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
-              placeholder="Enter first name"
+              placeholder="จะสร้างอัตโนมัติหากไม่กรอก"
             />
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700">
-              Last Name *
+            <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
+              ชื่อ-นามสกุล *
             </label>
             <input
               type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
-              placeholder="Enter last name"
+              placeholder="กรอกชื่อ-นามสกุล"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-              Email Address *
+            <label htmlFor="gender" className="block text-sm font-semibold text-gray-700">
+              เพศ *
             </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
-              placeholder="Enter email address"
-            />
+            >
+              <option value="">เลือกเพศ</option>
+              <option value="ชาย">ชาย</option>
+              <option value="หญิง">หญิง</option>
+            </select>
           </div>
           
           <div className="space-y-2">
+            <label htmlFor="nickname" className="block text-sm font-semibold text-gray-700">
+              ชื่อเล่น
+            </label>
+            <input
+              type="text"
+              id="nickname"
+              name="nickname"
+              value={formData.nickname}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
+              placeholder="กรอกชื่อเล่น"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
             <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
-              Phone Number
+              เบอร์โทรศัพท์
             </label>
             <input
               type="tel"
@@ -186,14 +222,32 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
               value={formData.phone}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
-              placeholder="Enter phone number"
+              placeholder="กรอกเบอร์โทรศัพท์"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="age" className="block text-sm font-semibold text-gray-700">
+              อายุ *
+            </label>
+            <input
+              type="number"
+              id="age"
+              name="age"
+              value={formData.age || ''}
+              onChange={handleInputChange}
+              required
+              min="0"
+              max="150"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
+              placeholder="กรอกอายุ"
             />
           </div>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="dateOfBirth" className="block text-sm font-semibold text-gray-700">
-            Date of Birth
+            วันเกิด
           </label>
           <input
             type="date"
@@ -206,17 +260,17 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="address" className="block text-sm font-semibold text-gray-700">
-            Address
+          <label htmlFor="photo" className="block text-sm font-semibold text-gray-700">
+            รูปภาพ (URL)
           </label>
-          <textarea
-            id="address"
-            name="address"
-            value={formData.address}
+          <input
+            type="url"
+            id="photo"
+            name="photo"
+            value={formData.photo}
             onChange={handleInputChange}
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 resize-none"
-            placeholder="Enter full address"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80"
+            placeholder="กรอก URL รูปภาพ"
           />
         </div>
 
@@ -229,14 +283,14 @@ export default function AddPatientForm({ onPatientAdded }: AddPatientFormProps) 
             {isSubmitting ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Adding Patient...</span>
+                <span>กำลังเพิ่มข้อมูล...</span>
               </div>
             ) : (
               <div className="flex items-center justify-center space-x-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <span>Add Patient</span>
+                <span>เพิ่มผู้ป่วย</span>
               </div>
             )}
           </button>

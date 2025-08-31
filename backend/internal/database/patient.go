@@ -8,13 +8,14 @@ import (
 
 // Patient represents a patient in the database
 type Patient struct {
-	ID          int       `json:"id" db:"id"`
-	FirstName   string    `json:"firstName" db:"first_name"`
-	LastName    string    `json:"lastName" db:"last_name"`
-	Email       string    `json:"email" db:"email"`
-	Phone       *string   `json:"phone,omitempty" db:"phone"`
-	DateOfBirth *string   `json:"dateOfBirth,omitempty" db:"date_of_birth"`
-	Address     *string   `json:"address,omitempty" db:"address"`
+	HN          string    `json:"hn" db:"hn"`                               // HN Number (HNXXXXXX)
+	FullName    string    `json:"fullName" db:"full_name"`                  // ชื่อ-นามสกุล
+	Gender      string    `json:"gender" db:"gender"`                       // เพศ
+	Nickname    *string   `json:"nickname,omitempty" db:"nickname"`         // ชื่อเล่น
+	Phone       *string   `json:"phone,omitempty" db:"phone"`               // เบอร์โทร
+	Age         int       `json:"age" db:"age"`                             // อายุ
+	DateOfBirth *string   `json:"dateOfBirth,omitempty" db:"date_of_birth"` // วันเกิด
+	Photo       *string   `json:"photo,omitempty" db:"photo"`               // Photo URL/Base64
 	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
 	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
 }
@@ -32,7 +33,7 @@ func NewPatientRepository(db *DB) *PatientRepository {
 // GetAll retrieves all patients from the database
 func (r *PatientRepository) GetAll() ([]Patient, error) {
 	query := `
-		SELECT id, first_name, last_name, email, phone, date_of_birth, address, created_at, updated_at
+		SELECT hn, full_name, gender, nickname, phone, age, date_of_birth, photo, created_at, updated_at
 		FROM patients
 		ORDER BY created_at DESC
 	`
@@ -46,8 +47,8 @@ func (r *PatientRepository) GetAll() ([]Patient, error) {
 	var patients []Patient
 	for rows.Next() {
 		var p Patient
-		err := rows.Scan(&p.ID, &p.FirstName, &p.LastName, &p.Email,
-			&p.Phone, &p.DateOfBirth, &p.Address, &p.CreatedAt, &p.UpdatedAt)
+		err := rows.Scan(&p.HN, &p.FullName, &p.Gender, &p.Nickname,
+			&p.Phone, &p.Age, &p.DateOfBirth, &p.Photo, &p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan patient: %w", err)
 		}
@@ -60,19 +61,19 @@ func (r *PatientRepository) GetAll() ([]Patient, error) {
 // GetByID retrieves a patient by ID
 func (r *PatientRepository) GetByID(id int) (*Patient, error) {
 	query := `
-		SELECT id, first_name, last_name, email, phone, date_of_birth, address, created_at, updated_at
+		SELECT hn, full_name, gender, nickname, phone, age, date_of_birth, photo, created_at, updated_at
 		FROM patients
-		WHERE id = $1
+		WHERE hn = $1
 	`
 
 	var p Patient
 	err := r.db.conn.QueryRow(query, id).Scan(
-		&p.ID, &p.FirstName, &p.LastName, &p.Email,
-		&p.Phone, &p.DateOfBirth, &p.Address, &p.CreatedAt, &p.UpdatedAt)
+		&p.HN, &p.FullName, &p.Gender, &p.Nickname,
+		&p.Phone, &p.Age, &p.DateOfBirth, &p.Photo, &p.CreatedAt, &p.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("patient with id %d not found", id)
+			return nil, fmt.Errorf("patient with hn %d not found", id)
 		}
 		return nil, fmt.Errorf("failed to get patient: %w", err)
 	}
@@ -83,13 +84,13 @@ func (r *PatientRepository) GetByID(id int) (*Patient, error) {
 // Create adds a new patient to the database
 func (r *PatientRepository) Create(p *Patient) error {
 	query := `
-		INSERT INTO patients (first_name, last_name, email, phone, date_of_birth, address)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, created_at, updated_at
+		INSERT INTO patients (hn, full_name, gender, nickname, phone, age, date_of_birth, photo)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING created_at, updated_at
 	`
 
-	err := r.db.conn.QueryRow(query, p.FirstName, p.LastName, p.Email,
-		p.Phone, p.DateOfBirth, p.Address).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
+	err := r.db.conn.QueryRow(query, p.HN, p.FullName, p.Gender, p.Nickname,
+		p.Phone, p.Age, p.DateOfBirth, p.Photo).Scan(&p.CreatedAt, &p.UpdatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create patient: %w", err)
@@ -102,14 +103,14 @@ func (r *PatientRepository) Create(p *Patient) error {
 func (r *PatientRepository) Update(p *Patient) error {
 	query := `
 		UPDATE patients 
-		SET first_name = $1, last_name = $2, email = $3, phone = $4, 
-		    date_of_birth = $5, address = $6, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $7
+		SET full_name = $1, gender = $2, nickname = $3, phone = $4, 
+		    age = $5, date_of_birth = $6, photo = $7, updated_at = CURRENT_TIMESTAMP
+		WHERE hn = $8
 		RETURNING updated_at
 	`
 
-	err := r.db.conn.QueryRow(query, p.FirstName, p.LastName, p.Email,
-		p.Phone, p.DateOfBirth, p.Address, p.ID).Scan(&p.UpdatedAt)
+	err := r.db.conn.QueryRow(query, p.FullName, p.Gender, p.Nickname,
+		p.Phone, p.Age, p.DateOfBirth, p.Photo, p.HN).Scan(&p.UpdatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to update patient: %w", err)
@@ -120,7 +121,7 @@ func (r *PatientRepository) Update(p *Patient) error {
 
 // Delete removes a patient from the database
 func (r *PatientRepository) Delete(id int) error {
-	query := "DELETE FROM patients WHERE id = $1"
+	query := "DELETE FROM patients WHERE hn = $1"
 
 	result, err := r.db.conn.Exec(query, id)
 	if err != nil {
@@ -133,7 +134,7 @@ func (r *PatientRepository) Delete(id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("patient with id %d not found", id)
+		return fmt.Errorf("patient with hn %d not found", id)
 	}
 
 	return nil

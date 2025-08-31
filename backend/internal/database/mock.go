@@ -9,16 +9,14 @@ import (
 
 // MockPatientRepository is an in-memory implementation for testing
 type MockPatientRepository struct {
-	patients map[int]*Patient
-	nextID   int
+	patients map[string]*Patient
 	mutex    sync.RWMutex
 }
 
 // NewMockPatientRepository creates a new mock patient repository
 func NewMockPatientRepository() *MockPatientRepository {
 	repo := &MockPatientRepository{
-		patients: make(map[int]*Patient),
-		nextID:   1,
+		patients: make(map[string]*Patient),
 	}
 
 	// Add some sample data
@@ -29,25 +27,31 @@ func NewMockPatientRepository() *MockPatientRepository {
 func (r *MockPatientRepository) createSampleData() {
 	samplePatients := []*Patient{
 		{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "john.doe@example.com",
-			Phone:     stringPtr("555-0101"),
-			Address:   stringPtr("123 Main St, City, State"),
+			HN:          "HN000001",
+			FullName:    "นายสมชาย ใจดี",
+			Gender:      "ชาย",
+			Nickname:    stringPtr("ชาย"),
+			Phone:       stringPtr("081-234-5678"),
+			Age:         35,
+			DateOfBirth: stringPtr("1989-03-15"),
 		},
 		{
-			FirstName: "Jane",
-			LastName:  "Smith",
-			Email:     "jane.smith@example.com",
-			Phone:     stringPtr("555-0102"),
-			Address:   stringPtr("456 Oak Ave, City, State"),
+			HN:          "HN000002",
+			FullName:    "นางสาวสมหญิง สวยงาม",
+			Gender:      "หญิง",
+			Nickname:    stringPtr("หญิง"),
+			Phone:       stringPtr("082-345-6789"),
+			Age:         28,
+			DateOfBirth: stringPtr("1996-07-22"),
 		},
 		{
-			FirstName: "Robert",
-			LastName:  "Johnson",
-			Email:     "robert.johnson@example.com",
-			Phone:     stringPtr("555-0103"),
-			Address:   stringPtr("789 Pine St, City, State"),
+			HN:          "HN000003",
+			FullName:    "นายวิชัย เก่งกาจ",
+			Gender:      "ชาย",
+			Nickname:    stringPtr("วิชัย"),
+			Phone:       stringPtr("083-456-7890"),
+			Age:         42,
+			DateOfBirth: stringPtr("1982-11-08"),
 		},
 	}
 
@@ -66,9 +70,9 @@ func (r *MockPatientRepository) GetAll() ([]Patient, error) {
 		patients = append(patients, *p)
 	}
 
-	// Sort by ID (newest first)
+	// Sort by CreatedAt (newest first)
 	sort.Slice(patients, func(i, j int) bool {
-		return patients[i].ID > patients[j].ID
+		return patients[i].CreatedAt.After(patients[j].CreatedAt)
 	})
 
 	return patients, nil
@@ -79,9 +83,12 @@ func (r *MockPatientRepository) GetByID(id int) (*Patient, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	patient, exists := r.patients[id]
+	// Convert int id to HN string format
+	hnString := fmt.Sprintf("HN%06d", id)
+
+	patient, exists := r.patients[hnString]
 	if !exists {
-		return nil, fmt.Errorf("patient with id %d not found", id)
+		return nil, fmt.Errorf("patient with hn %s not found", hnString)
 	}
 
 	// Return a copy
@@ -94,21 +101,17 @@ func (r *MockPatientRepository) Create(p *Patient) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	// Check if email already exists
-	for _, existing := range r.patients {
-		if existing.Email == p.Email {
-			return fmt.Errorf("patient with email %s already exists", p.Email)
-		}
+	// Check if HN already exists
+	if _, exists := r.patients[p.HN]; exists {
+		return fmt.Errorf("patient with HN %s already exists", p.HN)
 	}
 
-	p.ID = r.nextID
-	r.nextID++
 	p.CreatedAt = time.Now()
 	p.UpdatedAt = time.Now()
 
 	// Store a copy
 	patientCopy := *p
-	r.patients[p.ID] = &patientCopy
+	r.patients[p.HN] = &patientCopy
 
 	return nil
 }
@@ -118,25 +121,19 @@ func (r *MockPatientRepository) Update(p *Patient) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	existing, exists := r.patients[p.ID]
+	existing, exists := r.patients[p.HN]
 	if !exists {
-		return fmt.Errorf("patient with id %d not found", p.ID)
-	}
-
-	// Check if email conflicts with another patient
-	for id, other := range r.patients {
-		if id != p.ID && other.Email == p.Email {
-			return fmt.Errorf("patient with email %s already exists", p.Email)
-		}
+		return fmt.Errorf("patient with HN %s not found", p.HN)
 	}
 
 	// Update fields
-	existing.FirstName = p.FirstName
-	existing.LastName = p.LastName
-	existing.Email = p.Email
+	existing.FullName = p.FullName
+	existing.Gender = p.Gender
+	existing.Nickname = p.Nickname
 	existing.Phone = p.Phone
+	existing.Age = p.Age
 	existing.DateOfBirth = p.DateOfBirth
-	existing.Address = p.Address
+	existing.Photo = p.Photo
 	existing.UpdatedAt = time.Now()
 
 	// Update the stored patient
@@ -151,11 +148,14 @@ func (r *MockPatientRepository) Delete(id int) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if _, exists := r.patients[id]; !exists {
-		return fmt.Errorf("patient with id %d not found", id)
+	// Convert int id to HN string format
+	hnString := fmt.Sprintf("HN%06d", id)
+
+	if _, exists := r.patients[hnString]; !exists {
+		return fmt.Errorf("patient with hn %s not found", hnString)
 	}
 
-	delete(r.patients, id)
+	delete(r.patients, hnString)
 	return nil
 }
 

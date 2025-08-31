@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 
 interface Patient {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  dateOfBirth?: string;
-  address?: string;
+  hn: string;                // HN Number (HNXXXXXX)
+  fullName: string;          // ชื่อ-นามสกุล
+  gender: string;            // เพศ
+  nickname?: string;         // ชื่อเล่น
+  phone?: string;            // เบอร์โทร
+  age: number;               // อายุ
+  dateOfBirth?: string;      // วันเกิด
+  photo?: string;            // Photo URL/Base64
   createdAt: string;
   updatedAt: string;
 }
@@ -100,10 +101,10 @@ export default function PatientList({ refreshTrigger }: PatientListProps) {
                   Contact
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Details
+                  Personal Info
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Address
+                  Age & DOB
                 </th>
                 <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Registered
@@ -112,45 +113,56 @@ export default function PatientList({ refreshTrigger }: PatientListProps) {
             </thead>
             <tbody className="divide-y divide-gray-200/50">
               {patients.map((patient, index) => (
-                <tr key={patient.id} className="hover:bg-blue-50/30 transition-colors duration-150">
+                <tr key={patient.hn} className="hover:bg-blue-50/30 transition-colors duration-150">
                   <td className="px-8 py-6">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
-                        </div>
+                        {patient.photo ? (
+                          <img 
+                            src={patient.photo} 
+                            alt={patient.fullName}
+                            className="h-12 w-12 rounded-xl object-cover shadow-lg"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            {patient.fullName.charAt(0)}
+                          </div>
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="text-lg font-semibold text-gray-900">
-                          {patient.firstName} {patient.lastName}
+                          {patient.fullName}
                         </div>
-                        <div className="text-sm text-gray-500">ID: #{patient.id}</div>
+                        <div className="text-sm text-gray-500">HN: {patient.hn}</div>
+                        {patient.nickname && (
+                          <div className="text-sm text-blue-600">({patient.nickname})</div>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
                     <div className="space-y-1">
-                      <div className="text-sm text-gray-900 font-medium">{patient.email}</div>
                       <div className="text-sm text-gray-500">
                         {patient.phone || 'No phone'}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-sm text-gray-900">
-                      {patient.dateOfBirth ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Born: {patient.dateOfBirth}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">No DOB</span>
-                      )}
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-900 font-medium">
+                        เพศ: {patient.gender}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {patient.address || (
-                        <span className="text-gray-400">No address provided</span>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-900 font-medium">
+                        อายุ: {patient.age} ปี
+                      </div>
+                      {patient.dateOfBirth && (
+                        <div className="text-xs text-gray-500">
+                          วันเกิด: {patient.dateOfBirth}
+                        </div>
                       )}
                     </div>
                   </td>

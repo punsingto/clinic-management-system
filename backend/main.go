@@ -25,19 +25,19 @@ func main() {
 
 	// Patient routes
 	r.HandleFunc("/api/patients", patientHandler.GetPatients).Methods("GET")
-	r.HandleFunc("/api/patients/{id}", patientHandler.GetPatient).Methods("GET")
+	r.HandleFunc("/api/patients/{hn}", patientHandler.GetPatient).Methods("GET")
 	r.HandleFunc("/api/patients", patientHandler.CreatePatient).Methods("POST")
-	r.HandleFunc("/api/patients/{id}", patientHandler.UpdatePatient).Methods("PUT")
-	r.HandleFunc("/api/patients/{id}", patientHandler.DeletePatient).Methods("DELETE")
+	r.HandleFunc("/api/patients/{hn}", patientHandler.UpdatePatient).Methods("PUT")
+	r.HandleFunc("/api/patients/{hn}", patientHandler.DeletePatient).Methods("DELETE")
 
 	log.Printf("Starting server on :8080")
 	log.Printf("Available endpoints:")
 	log.Printf("  GET    /health")
 	log.Printf("  GET    /api/patients")
-	log.Printf("  GET    /api/patients/{id}")
+	log.Printf("  GET    /api/patients/{hn}")
 	log.Printf("  POST   /api/patients")
-	log.Printf("  PUT    /api/patients/{id}")
-	log.Printf("  DELETE /api/patients/{id}")
+	log.Printf("  PUT    /api/patients/{hn}")
+	log.Printf("  DELETE /api/patients/{hn}")
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
