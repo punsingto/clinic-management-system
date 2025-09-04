@@ -84,7 +84,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
       return { isValid: false, message: 'HN ต้องไม่เกิน 6 หลัก', type: 'error' };
     }
     
-    return { isValid: true, message: '', type: 'success' };
+    return { isValid: true, message: 'HN ถูกต้อง', type: 'success' };
   };
 
   const validatePhone = (phone: string): FieldValidation => {
@@ -97,7 +97,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
       return { isValid: false, message: 'เบอร์โทรต้องมี 10 หลัก', type: 'error' };
     }
     
-    return { isValid: true, message: '', type: 'success' };
+    return { isValid: true, message: 'เบอร์โทรถูกต้อง', type: 'success' };
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -145,15 +145,6 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
       ...prev,
       [fieldName]: true
     }));
-    
-    // Add leading zeros to HN when field loses focus
-    if (fieldName === 'hn' && formData.hn) {
-      const formattedHN = addLeadingZeros(formData.hn);
-      setFormData(prev => ({
-        ...prev,
-        hn: formattedHN
-      }));
-    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,10 +175,6 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Prevent page scrolling during submission
-    const currentScrollY = window.scrollY;
-    
     setIsSubmitting(true);
     setError('');
 
@@ -233,9 +220,6 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
 
       setSuccess(true);
       onPatientAdded();
-      
-      // Maintain scroll position after form reset
-      window.scrollTo(0, currentScrollY);
 
       setTimeout(() => {
         setSuccess(false);
@@ -245,38 +229,6 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
       setError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleClearForm = () => {
-    // Reset form data
-    setFormData({
-      hn: '',
-      titlePrefix: '',
-      fullName: '',
-      gender: '',
-      nickname: '',
-      phone: '',
-      age: 0,
-      dateOfBirth: '',
-      photo: ''
-    });
-    
-    // Clear photo preview
-    setPhotoPreview('');
-    
-    // Clear validation states
-    setValidationErrors({});
-    setFieldValidations({});
-    setTouchedFields({});
-    
-    // Clear messages
-    setError('');
-    setSuccess(false);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -301,100 +253,104 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       {/* Messages */}
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-700 text-sm">บันทึกข้อมูลผู้ป่วยเรียบร้อยแล้ว</p>
         </div>
       )}
 
       {/* Form */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Photo and HN Section */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-2xl border border-gray-200 shadow-lg">
-              <div className="flex items-stretch gap-8">
-                {/* Photo Upload - Left Side */}
-                <div className="flex flex-col items-center justify-center min-w-0 flex-shrink-0">
-                  {photoPreview ? (
-                    <div className="relative group">
-                      <img
-                        src={photoPreview}
-                        alt="รูปผู้ป่วย"
-                        className="w-36 h-36 rounded-2xl object-cover border-4 border-white shadow-xl ring-1 ring-gray-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={removePhoto}
-                        className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-sm shadow-lg ring-2 ring-white transition-all duration-200 opacity-90 group-hover:opacity-100"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-36 h-36 rounded-2xl border-3 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white shadow-lg hover:shadow-xl transition-all duration-300 group"
-                    >
-                      <div className="text-center text-gray-500 group-hover:text-blue-500 transition-colors duration-300">
-                        <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <div className="text-sm font-medium">เพิ่มรูปภาพ</div>
-                        <div className="text-xs text-gray-400 mt-1">คลิกเพื่อเลือกไฟล์</div>
-                      </div>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </div>
+        <div className="p-6">
+          <div className="text-center border-b border-gray-100 pb-4 mb-6">
+            <h2 className="text-xl font-medium text-gray-800">เพิ่มผู้ป่วยใหม่</h2>
+            <p className="text-gray-500 text-sm mt-1">กรอกข้อมูลผู้ป่วยให้ครบถ้วน</p>
+          </div>
 
-                {/* HN Field - Right Side */}
-                <div className="flex-1 flex items-center">
-                  <div className="w-full bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">หมายเลขผู้ป่วย</h3>
-                      <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto"></div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <label className="text-sm font-bold text-white bg-blue-500 px-4 py-2 rounded-full shadow-md whitespace-nowrap">
-                        HN <span className="text-yellow-300">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="hn"
-                        value={formData.hn}
-                        onChange={handleInputChange}
-                        onBlur={() => handleFieldBlur('hn')}
-                        className={`flex-1 px-6 py-3 border-2 rounded-2xl bg-gray-50 shadow-inner focus:ring-3 focus:ring-blue-300 focus:border-blue-500 focus:bg-white transition-all duration-300 font-mono text-xl font-bold tracking-wide ${getFieldValidationClass('hn')}`}
-                        placeholder="000000"
-                        style={{ textAlign: 'center', letterSpacing: '0.2em' }}
-                      />
-                    </div>
-                    {renderValidationMessage('hn')}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Photo and HN Section */}
+            <div className="flex gap-6 items-start bg-gray-50 p-4 rounded-lg">
+              {/* Photo Upload */}
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">รูปถ่าย</label>
+                {photoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="รูปผู้ป่วย"
+                      className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
+                    >
+                      ×
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-gray-400 bg-white"
+                  >
+                    <div className="text-center text-gray-400">
+                      <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-xs">เพิ่มรูป</span>
+                    </div>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {/* HN Field */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  หมายเลข HN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="hn"
+                  value={formData.hn}
+                  onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur('hn')}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${getFieldValidationClass('hn')}`}
+                  placeholder="ระบุหมายเลข HN"
+                  maxLength={6}
+                  required
+                />
+                {renderValidationMessage('hn')}
+                {formData.hn && (
+                  <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <span className="text-sm text-blue-700">รูปแบบ HN: </span>
+                    <span className="font-mono font-semibold text-blue-900">{addLeadingZeros(formData.hn)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Personal Information */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">ข้อมูลส่วนตัว</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     คำนำหน้า <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -402,7 +358,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.titlePrefix}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('titlePrefix')}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
                     <option value="">เลือกคำนำหน้า</option>
@@ -415,7 +371,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     เพศ <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -423,7 +379,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.gender}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('gender')}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
                     <option value="">เลือกเพศ</option>
@@ -434,7 +390,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   ชื่อ-นามสกุล <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -443,15 +399,15 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   onBlur={() => handleFieldBlur('fullName')}
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="ระบุชื่อและนามสกุล"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     ชื่อเล่น
                   </label>
                   <input
@@ -460,13 +416,13 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.nickname}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('nickname')}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="ระบุชื่อเล่น"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     อายุ <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -475,7 +431,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.age || ''}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('age')}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="ระบุอายุ"
                     min="0"
                     max="150"
@@ -486,10 +442,12 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">ข้อมูลติดต่อ</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     เบอร์โทรศัพท์ <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -498,7 +456,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.phone}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('phone')}
-                    className={`w-full px-3 py-1.5 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${getFieldValidationClass('phone')}`}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${getFieldValidationClass('phone')}`}
                     placeholder="0xx-xxx-xxxx"
                     required
                   />
@@ -506,7 +464,7 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     วันเกิด
                   </label>
                   <input
@@ -515,38 +473,29 @@ function AddPatientForm({ onPatientAdded }: AddPatientFormProps) {
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('dateOfBirth')}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     max={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Submit and Clear Buttons */}
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={handleClearForm}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
-                >
-                  ล้างข้อมูล
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>กำลังบันทึกข้อมูล...</span>
-                    </div>
-                  ) : (
-                    'บันทึกข้อมูลผู้ป่วย'
-                  )}
-                </button>
-              </div>
+            {/* Submit Button */}
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-md transition-all duration-200 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>กำลังบันทึกข้อมูล...</span>
+                  </div>
+                ) : (
+                  'บันทึกข้อมูลผู้ป่วย'
+                )}
+              </button>
             </div>
           </form>
         </div>
